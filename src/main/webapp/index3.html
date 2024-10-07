@@ -16,7 +16,7 @@
 </head>
 <body>
 
-<script>	
+<script>
 
 var DiceGame={
   turn : 0,
@@ -62,34 +62,43 @@ var DiceView={
 				onclick: function(e) {DiceGame.play()}
 			    },"play"),
 		])
-	}	
-}
- 
-var Score = {
-	    list: [],
-	    loadList: function() {
-	        return m.request({
-	            method: "GET",
-	            url: "_ah/api/myApi/v1/topscores/"
-	        })
-	        .then(function(result) {
-	            Score.list = result.items
-	        	console.log("got:",result.items)
-	        	// m.redraw(true) 
-	        })
-	    },
-	    save: function(score,name) {
-	    	console.log("saving...",Score.current)
-	        return m.request({
-	            method: "GET",
-	            url: "_ah/api/myApi/v1/addScore/"+score+"/"+name
-	        })
-	        .then(function(result) {
-	        	console.log("got:",result)
-	        	Score.loadList()
-	        })
-	    }
 	}
+}
+
+var Score = {
+    list: [],
+    loadList: function() {
+        return m.request({
+            method: "GET",
+            url: "_ah/api/myApi/v1/topscores/"
+        })
+        .then(function(result) {
+            Score.list = result.items;
+            console.log("got:", result.items);
+        });
+    },
+    loadMyScores: function(name) {
+        return m.request({
+            method: "GET",
+            url: "_ah/api/myApi/v1/myscores/" + name
+        })
+        .then(function(result) {
+            Score.list = result.items;
+            console.log("my scores:", result.items);
+        });
+    },
+    save: function(score, name) {
+        console.log("saving...", Score.current);
+        return m.request({
+            method: "GET",
+            url: "_ah/api/myApi/v1/addScore/" + score + "/" + name
+        })
+        .then(function(result) {
+            console.log("got:", result);
+            Score.loadList();
+        });
+    }
+};
 
 var ScoreView = {
   oninit: Score.loadList,
@@ -112,6 +121,32 @@ var ScoreView = {
   }
 }
 
+var MyScoreView = {
+    oninit: function() {
+        Score.loadMyScores(DiceGame.name);
+    },
+    view: function() {
+        var myScores = Score.list.filter(function(item) {
+            return item.properties.name === DiceGame.name;
+        });
+        return m('div', [
+            m('div', { class: 'subtitle' }, "My Top 10 Scores"),
+            m('table', { class: 'table is-striped' }, [
+                m('tr', [
+                    m('th', { width: "20px" }, "Name"),
+                    m('th', { width: "50px" }, "Score")
+                ]),
+                myScores.map(function(item) {
+                    return m("tr", [
+                        m('td', m('label', item.properties.name)),
+                        m('td', m('label', item.properties.score))
+                    ]);
+                })
+            ])
+        ]);
+    }
+};
+
 var Hello = {
    view: function() {
    	return m('div', {class:'container'}, [
@@ -119,13 +154,14 @@ var Hello = {
            m('div',{class: 'tile is-ancestor'},[
                m("div", {class: 'tile'}, m('div',{class:'tile is-child box'},m(DiceView))),
                m("div", {class: 'tile'}, m('div',{class:'tile is-child box'},m(ScoreView))),
+               m("div", {class: 'tile'}, m('div',{class:'tile is-child box'},m(MyScoreView))),
            ])
        ])
    }
 }
 
 
-m.mount(document.body, Hello)	
+m.mount(document.body, Hello)
 
 
 </script>
