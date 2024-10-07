@@ -12,8 +12,3 @@ indexes:
     direction: asc
   - name: score
     direction: desc
-
-- kind: D2User
-  properties:
-  - name: signed
-    direction: asc
