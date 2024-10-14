@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>DiceGame</title>
-    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
     <script src="https://unpkg.com/mithril/mithril.js"></script>
-
+    
     <!-- Inclure l'API Google OAuth -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
@@ -51,12 +50,19 @@ var DiceView = {
     view: function() {
         return m('div', [
             m('div', { class: 'subtitle' }, "Just play here"),
+            m('input[type=text][placeholder=name]', {
+                value: DiceGame.name,
+                class: 'input is-rounded',
+                oninput: function(e) {
+                    DiceGame.name = e.target.value;
+                },
+            }),
             m('div', { class: 'level' }, [
-                m('label', { class: 'level-item' }, "turn:" + DiceGame.turn),
-                m('label', { class: 'level-item' }, "score:" + DiceGame.score),
+                m('label', { class: 'level-item' }, "turn: " + DiceGame.turn),
+                m('label', { class: 'level-item' }, "score: " + DiceGame.score),
             ]),
-            m('label', { class: 'label' }, "Dice 1:" + DiceGame.d1),
-            m('label', { class: 'label' }, "Dice 2:" + DiceGame.d2),
+            m('label', { class: 'label' }, "Dice 1: " + DiceGame.d1),
+            m('label', { class: 'label' }, "Dice 2: " + DiceGame.d2),
             m('button', {
                 class: 'button is-link',
                 onclick: function() { DiceGame.play() }
