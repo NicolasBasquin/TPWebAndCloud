@@ -1,69 +1,68 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>DiceGame</title>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <title>DiceGame</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <script src="https://unpkg.com/mithril/mithril.js"></script>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
-<script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
-
-
-<script src="https://unpkg.com/mithril/mithril.js"></script>
-
+    <!-- Inclure l'API Google OAuth -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
 <script>
+// Variables globales
+var userProfile = null; // Profil de l'utilisateur après authentification
 
-var DiceGame={
-  turn : 0,
-  d1 : 1,
-  d2 : 1,
-  name : 'spock',
-  score : 0,
+var DiceGame = {
+    turn: 0,
+    d1: 1,
+    d2: 1,
+    name: 'anonymous',
+    score: 0,
 
-  play: function() {
- 	if (this.turn < 10) {
-   	  this.d1 = Math.floor((Math.random() * 5) + 1);
-	  this.d2 = Math.floor((Math.random() * 5) + 1);
-	  if (this.d1 + this.d2 == 7) {
-	    this.score += 10;
-	  }
-	  this.turn++;
-	} else {
-		Score.save(this.score,this.name);
-		this.turn=0;
-		this.score=0;
-	}
-   }
- } // DiceGame
+    play: function() {
+        if (this.turn < 10) {
+            this.d1 = Math.floor((Math.random() * 6) + 1);
+            this.d2 = Math.floor((Math.random() * 6) + 1);
+            if (this.d1 + this.d2 === 7) {
+                this.score += 10;
+            }
+            this.turn++;
+        } else {
+            if (userProfile !== null) {
+                Score.save(this.score, userProfile.name);  // Utiliser le nom de l'utilisateur authentifié
+            } else {
+                alert("Vous devez être connecté pour sauvegarder votre score.");
+            }
+            this.turn = 0;
+            this.score = 0;
+        }
+    }
+}; // DiceGame
 
-var DiceView={
-	view: function() {
-		return m('div', [
-			m('div',{class:'subtitle'},"Just play here"),
-			m("input[type=text][placeholder=name]", {
-				value: DiceGame.name,
-				class: 'input is-rounded',
-				 oninput: function (e) {
-					 DiceGame.name=e.target.value},
-				 }),
-			m('div',{class:'level'},[
-			 m('label',{class:'level-item'},"turn:"+DiceGame.turn),
-			 m('label',{class:'level-item'},"score:"+DiceGame.score),
-			]),
-			m('label',{class:'label'},"Dice 1:"+DiceGame.d1),
-			m('label',{class:'label'},"Dice 2:"+DiceGame.d2),
-			m('button',{
-				class: 'button is-link',
-				onclick: function(e) {DiceGame.play()}
-			    },"play"),
-		])
-	}
-}
+var DiceView = {
+    view: function() {
+        return m('div', [
+            m('div', { class: 'subtitle' }, "Just play here"),
+            m('div', { class: 'level' }, [
+                m('label', { class: 'level-item' }, "turn:" + DiceGame.turn),
+                m('label', { class: 'level-item' }, "score:" + DiceGame.score),
+            ]),
+            m('label', { class: 'label' }, "Dice 1:" + DiceGame.d1),
+            m('label', { class: 'label' }, "Dice 2:" + DiceGame.d2),
+            m('button', {
+                class: 'button is-link',
+                onclick: function() { DiceGame.play() }
+            }, "Play"),
+        ]);
+    }
+};
 
 var Score = {
     list: [],
@@ -73,53 +72,53 @@ var Score = {
             url: "_ah/api/myApi/v1/topscores/"
         })
         .then(function(result) {
-            Score.list = result.items;
-            console.log("got:", result.items);
+            Score.list = result.items || [];
+            console.log("Top scores:", result.items);
         });
     },
     loadMyScores: function(name) {
         return m.request({
             method: "GET",
-            url: "_ah/api/myApi/v1/myscores/" + name
+            url: "_ah/api/myApi/v1/myscores/" + name  // Utiliser le nom de l'utilisateur authentifié ici
         })
         .then(function(result) {
-            Score.list = result.items;
-            console.log("my scores:", result.items);
+            Score.list = result.items || [];
+            console.log("My scores:", result.items);
+            m.redraw();  // Forcer la mise à jour de la vue après récupération des données
         });
     },
     save: function(score, name) {
-        console.log("saving...", Score.current);
         return m.request({
             method: "GET",
             url: "_ah/api/myApi/v1/addScore/" + score + "/" + name
         })
         .then(function(result) {
-            console.log("got:", result);
-            Score.loadList();
+            console.log("Score saved:", result);
+            Score.loadList();  // Recharger la liste des scores après sauvegarde
         });
     }
 };
 
 var ScoreView = {
-  oninit: Score.loadList,
-  view: function() {
-   	return m('div', [
-	  m('div',{class:'subtitle'},"Top 10 Scores"),
-	  m('table', {class:'table is-striped'},[
-	    m('tr', [
-	      m('th', {width:"20px"}, "Name"),
-	      m('th', {width:"50px"}, "Score"),
-	    ]),
-	    Score.list.map(function(item) {
-	      return m("tr", [
-  	        m('td', m('label', item.properties.name)),
-	        m('td', m('label', item.properties.score)),
-	      ])
-	    })
-	   ])
-	 ])
-  }
-}
+    oninit: Score.loadList,
+    view: function() {
+        return m('div', [
+            m('div', { class: 'subtitle' }, "Top 10 Scores"),
+            m('table', { class: 'table is-striped' }, [
+                m('tr', [
+                    m('th', { width: "20px" }, "Name"),
+                    m('th', { width: "50px" }, "Score"),
+                ]),
+                Score.list.map(function(item) {
+                    return m('tr', [
+                        m('td', m('label', item.properties.name)),
+                        m('td', m('label', item.properties.score)),
+                    ]);
+                })
+            ])
+        ]);
+    }
+};
 
 var MyScoreView = {
     oninit: function() {
@@ -131,6 +130,7 @@ var MyScoreView = {
         });
         return m('div', [
             m('div', { class: 'subtitle' }, "My Top 10 Scores"),
+            m('div', { class: 'notification' }, "Current Score: " + DiceGame.score), // Affichage du score actuel
             m('table', { class: 'table is-striped' }, [
                 m('tr', [
                     m('th', { width: "20px" }, "Name"),
@@ -148,22 +148,64 @@ var MyScoreView = {
 };
 
 var Hello = {
-   view: function() {
-   	return m('div', {class:'container'}, [
-           m("h1", {class: 'title'}, 'The Dice Game'),
-           m('div',{class: 'tile is-ancestor'},[
-               m("div", {class: 'tile'}, m('div',{class:'tile is-child box'},m(DiceView))),
-               m("div", {class: 'tile'}, m('div',{class:'tile is-child box'},m(ScoreView))),
-               m("div", {class: 'tile'}, m('div',{class:'tile is-child box'},m(MyScoreView))),
-           ])
-       ])
-   }
+    view: function() {
+        return m('div', { class: 'container' }, [
+            m('h1', { class: 'title' }, 'The Dice Game'),
+            m('div', { class: 'tile is-ancestor' }, [
+                m('div', { class: 'tile' }, m('div', { class: 'tile is-child box' }, m(DiceView))),
+                m('div', { class: 'tile' }, m('div', { class: 'tile is-child box' }, m(ScoreView))),
+                m('div', { class: 'tile' }, m('div', { class: 'tile is-child box' }, m(MyScoreView)))
+            ]),
+            m('div', { id: 'buttonDiv' }),  // Bouton Google OAuth ici
+            m('p', { id: 'userName' }, "Vous n'êtes pas connecté.")  // Affichage du nom de l'utilisateur ici
+        ]);
+    }
+};
+
+// Gérer la réponse de Google lors de l'authentification
+function handleCredentialResponse(response) {
+    const token = response.credential;
+    console.log("Token reçu :", token);
+
+    // Décoder le token JWT pour récupérer les informations utilisateur
+    const data = parseJwt(token);
+    console.log("Utilisateur authentifié :", data);
+
+    userProfile = data;  // Stocker les informations utilisateur
+
+    // Afficher le nom de l'utilisateur sur la page
+    document.getElementById('userName').innerText = `Connecté en tant que : ${data.name}`;
+
+    // Charger les scores de l'utilisateur après connexion
+    Score.loadMyScores(userProfile.name);  // Charger les scores personnels après authentification
 }
 
+// Décoder le JWT pour récupérer les informations utilisateur
+function parseJwt(token) {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
 
-m.mount(document.body, Hello)
+    return JSON.parse(jsonPayload);
+}
 
+// Initialiser le bouton de connexion Google
+window.onload = function() {
+    google.accounts.id.initialize({
+        client_id: '790781919372-bj4veur0jdmlis2937n5bpmmv4dd6c91.apps.googleusercontent.com',  // Remplace par ton propre ID client
+        callback: handleCredentialResponse
+    });
 
+    google.accounts.id.renderButton(
+        document.getElementById('buttonDiv'),
+        { theme: 'outline', size: 'large' }  // Options du bouton
+    );
+};
+
+m.mount(document.body, Hello);
 </script>
+
 </body>
 </html>
