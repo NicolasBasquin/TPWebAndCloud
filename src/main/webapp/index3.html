@@ -83,6 +83,16 @@ var Score = {
             console.log("Top scores:", result.items);
         });
     },
+    loadMyScores: function(name) {
+        return m.request({
+            method: "GET",
+            url: "_ah/api/myApi/v1/myscores/" + name
+        })
+        .then(function(result) {
+            Score.list = result.items || [];
+            console.log("My scores:", result.items);
+        });
+    },
     save: function(score, name) {
         return m.request({
             method: "GET",
@@ -116,6 +126,31 @@ var ScoreView = {
     }
 };
 
+var MyScoreView = {
+    oninit: function() {
+        if (userProfile !== null) {
+            Score.loadMyScores(userProfile.name);  // Charger les scores de l'utilisateur connecté
+        }
+    },
+    view: function() {
+        return m('div', [
+            m('div', { class: 'subtitle' }, "My Top 10 Scores"),
+            m('table', { class: 'table is-striped' }, [
+                m('tr', [
+                    m('th', { width: "20px" }, "Name"),
+                    m('th', { width: "50px" }, "Score"),
+                ]),
+                Score.list.map(function(item) {
+                    return m('tr', [
+                        m('td', m('label', item.properties.name)),
+                        m('td', m('label', item.properties.score)),
+                    ]);
+                })
+            ])
+        ]);
+    }
+};
+
 var Hello = {
     view: function() {
         return m('div', { class: 'container' }, [
@@ -123,6 +158,7 @@ var Hello = {
             m('div', { class: 'tile is-ancestor' }, [
                 m('div', { class: 'tile' }, m('div', { class: 'tile is-child box' }, m(DiceView))),
                 m('div', { class: 'tile' }, m('div', { class: 'tile is-child box' }, m(ScoreView))),
+                m('div', { class: 'tile' }, m('div', { class: 'tile is-child box' }, m(MyScoreView))),  // Ajout de MyScoreView
             ]),
             m('div', { id: 'buttonDiv' }),  // Bouton Google OAuth ici
             m('p', { id: 'userName' }, "Vous n'êtes pas connecté.")  // Affichage du nom de l'utilisateur ici
@@ -143,6 +179,9 @@ function handleCredentialResponse(response) {
 
     // Afficher le nom de l'utilisateur sur la page
     document.getElementById('userName').innerText = `Connecté en tant que : ${data.name}`;
+
+    // Recharger MyScoreView pour afficher les scores de l'utilisateur connecté
+    m.mount(document.querySelector('.tile.is-child.box:nth-child(3)'), MyScoreView);
 }
 
 // Décoder le JWT pour récupérer les informations utilisateur
