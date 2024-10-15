@@ -122,22 +122,24 @@ var ScoreView = {
 
 var MyScoreView = {
     oninit: function() {
-        if (userProfile !== null) {
-            Score.loadMyScores(userProfile.name);  // Charger les scores de l'utilisateur connecté
-        }
+        Score.loadMyScores(DiceGame.name);
     },
     view: function() {
+        var myScores = Score.list.filter(function(item) {
+            return item.properties.name === DiceGame.name;
+        });
         return m('div', [
             m('div', { class: 'subtitle' }, "My Top 10 Scores"),
+            m('div', { class: 'notification' }, "Current Score: " + DiceGame.score), // Affichage du score actuel
             m('table', { class: 'table is-striped' }, [
                 m('tr', [
                     m('th', { width: "20px" }, "Name"),
-                    m('th', { width: "50px" }, "Score"),
+                    m('th', { width: "50px" }, "Score")
                 ]),
-                Score.list.map(function(item) {
-                    return m('tr', [
+                myScores.map(function(item) {
+                    return m("tr", [
                         m('td', m('label', item.properties.name)),
-                        m('td', m('label', item.properties.score)),
+                        m('td', m('label', item.properties.score))
                     ]);
                 })
             ])
