@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <title>DiceGame</title>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
     <script src="https://unpkg.com/mithril/mithril.js"></script>
-    
+
     <!-- Inclure l'API Google OAuth -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-
 </head>
 <body>
 
@@ -50,19 +50,12 @@ var DiceView = {
     view: function() {
         return m('div', [
             m('div', { class: 'subtitle' }, "Just play here"),
-            m('input[type=text][placeholder=name]', {
-                value: DiceGame.name,
-                class: 'input is-rounded',
-                oninput: function(e) {
-                    DiceGame.name = e.target.value;
-                },
-            }),
             m('div', { class: 'level' }, [
-                m('label', { class: 'level-item' }, "turn: " + DiceGame.turn),
-                m('label', { class: 'level-item' }, "score: " + DiceGame.score),
+                m('label', { class: 'level-item' }, "turn:" + DiceGame.turn),
+                m('label', { class: 'level-item' }, "score:" + DiceGame.score),
             ]),
-            m('label', { class: 'label' }, "Dice 1: " + DiceGame.d1),
-            m('label', { class: 'label' }, "Dice 2: " + DiceGame.d2),
+            m('label', { class: 'label' }, "Dice 1:" + DiceGame.d1),
+            m('label', { class: 'label' }, "Dice 2:" + DiceGame.d2),
             m('button', {
                 class: 'button is-link',
                 onclick: function() { DiceGame.play() }
@@ -86,11 +79,12 @@ var Score = {
     loadMyScores: function(name) {
         return m.request({
             method: "GET",
-            url: "_ah/api/myApi/v1/myscores/" + name
+            url: "_ah/api/myApi/v1/myscores/" + name  // Utiliser le nom de l'utilisateur authentifié ici
         })
         .then(function(result) {
             Score.list = result.items || [];
             console.log("My scores:", result.items);
+            m.redraw();  // Forcer la mise à jour de la vue après récupération des données
         });
     },
     save: function(score, name) {
@@ -100,7 +94,7 @@ var Score = {
         })
         .then(function(result) {
             console.log("Score saved:", result);
-            Score.loadList();
+            Score.loadList();  // Recharger la liste des scores après sauvegarde
         });
     }
 };
@@ -158,7 +152,7 @@ var Hello = {
             m('div', { class: 'tile is-ancestor' }, [
                 m('div', { class: 'tile' }, m('div', { class: 'tile is-child box' }, m(DiceView))),
                 m('div', { class: 'tile' }, m('div', { class: 'tile is-child box' }, m(ScoreView))),
-                m('div', { class: 'tile' }, m('div', { class: 'tile is-child box' }, m(MyScoreView))),  // Ajout de MyScoreView
+                m('div', { class: 'tile' }, m('div', { class: 'tile is-child box' }, m(MyScoreView)))
             ]),
             m('div', { id: 'buttonDiv' }),  // Bouton Google OAuth ici
             m('p', { id: 'userName' }, "Vous n'êtes pas connecté.")  // Affichage du nom de l'utilisateur ici
@@ -180,8 +174,8 @@ function handleCredentialResponse(response) {
     // Afficher le nom de l'utilisateur sur la page
     document.getElementById('userName').innerText = `Connecté en tant que : ${data.name}`;
 
-    // Recharger MyScoreView pour afficher les scores de l'utilisateur connecté
-    m.mount(document.querySelector('.tile.is-child.box:nth-child(3)'), MyScoreView);
+    // Charger les scores de l'utilisateur après connexion
+    Score.loadMyScores(userProfile.name);  // Charger les scores personnels après authentification
 }
 
 // Décoder le JWT pour récupérer les informations utilisateur
